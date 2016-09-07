@@ -11,11 +11,26 @@ app.get('/', function(req, res){
   res.sendFile(path.join(__dirname, '../chat-application', 'index.html'));
 });
  
+var messages = [];
+function storeMessage(from,msg){
+	messages.push({name:from, data: msg});
+	if(messages.length > 10)
+		messages.shift();
+}
+
 // Register events on socket connection
 io.on('connection', function(socket){ 
+  socket.on('newConnect', function(user){  
+    console.log("New Connection is made!");
+	messages.forEach(function(message){
+		io.emit('join',message.name,message.data);
+	});
+	io.emit('chatMessage', 'System', '<b>' + user + '</b> has joined the discussion');
+  });
   socket.on('chatMessage', function(from, msg){
     io.emit('chatMessage', from, msg);
-  });
+    storeMessage(from,msg);
+  }); 
   socket.on('notifyUser', function(user){
     io.emit('notifyUser', user);
   });
